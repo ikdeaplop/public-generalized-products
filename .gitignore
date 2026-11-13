@@ -1,0 +1,58 @@
+# ---- 凭证类（绝不入库）----
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.keystore
+*secret*
+*credential*
+*token*.json
+*cookie*.txt
+*session*.json
+.freellm-keys.conf
+.machine-identity.json
+.hf_token
+
+# ---- 原始产物（体积大且含内容数据）----
+transcripts/
+*.mp4
+*.mov
+*.tsv
+ocr_output/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- 编辑器 / 系统 ----
+.DS_Store
+.AppleDouble
+._*
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# ---- 备份与历史（实测踩坑：.bak 文件含旧版私密路径）----
+*.bak
+*.bak-*
+*.old
+*.orig
+*.save
+history/
+
+# ---- 日志 ----
+*.log
