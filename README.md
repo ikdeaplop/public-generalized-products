@@ -41,12 +41,53 @@ Each directory is a self-contained skill with a `SKILL.md`. They are written to 
 | `gate_selftest.sh` | **Proves the gate works.** Plants one sample per rule class and asserts that each rule reports *that specific file* — plus a clean-tree pass and a whitelist check. A gate that only ever sees a clean tree is untested. Runs in CI. |
 | `stage_public.py` | Copies artifacts from a local machine into this repo with **rule-based, idempotent redaction**. Copies rather than moves; the source is never modified. |
 | `publish_github.sh` | One-command publish: runs the gate and its self-test, creates the repo if needed, pushes, verifies. Never force-pushes. |
+| `ci_local.sh` | **Runs every CI check locally** — the 7 steps of `.github/workflows/ci.yml`, in the same order, with the same assertions. Use it before every push. |
+| `publish_ci_workflow.sh` | Publishes the hosted workflow definition. Tries every channel that can write `.github/workflows/` and reports *which* channel is blocked, instead of failing silently. |
 
 ### `docs/` — methodology
 
 `docs/Selection-and-Redaction-Principles.md` documents what gets published and what
 never does, how redaction is applied and verified, and the two classes of problem a
 string-matching gate cannot catch on its own.
+
+---
+
+## Continuous integration
+
+`.github/workflows/ci.yml` defines the hosted pipeline: redaction gate, both
+tool self-tests, a Python syntax pass, a skill-structure pass, a shell syntax
+pass, and the gate self-test that proves planted samples are actually caught.
+
+**Run the same pipeline without any network access:**
+
+```bash
+bash scripts/ci_local.sh
+```
+
+### Why the workflow may not be on the remote yet
+
+GitHub refuses to create files under `.github/workflows/` for an account whose
+email address is not verified. The REST API answers `404 Not Found` for that
+whole directory — for any file name, any extension — while ordinary paths such
+as `.github/PULL_REQUEST_TEMPLATE.md` return `201 Created`. The same account
+level requirement is what makes `git push` over HTTPS return
+`403 You must verify your email address`.
+
+Nothing about the workflow itself is wrong; it is an account-level gate.
+`bash scripts/publish_ci_workflow.sh` tries every channel that can write that
+directory and prints the exact remedy for the one that is missing. In short:
+
+1. Set the account email to its own `noreply` form — GitHub accepts that form
+   as verified without any inbox round-trip:
+   `https://github.com/settings/emails` →
+   `<id>+<login>@users.noreply.github.com`
+   (the numeric id is the `"id"` field of `https://api.github.com/user`).
+2. Or register an SSH key (`gh auth refresh -h github.com -s admin:public_key`
+   then `gh ssh-key add ~/.ssh/id_ed25519.pub`), which does not consult the
+   account email at all.
+
+Until either is done, `scripts/ci_local.sh` provides the identical guarantees
+locally.
 
 ---
 
