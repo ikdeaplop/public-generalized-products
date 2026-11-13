@@ -137,6 +137,10 @@ def main():
         payload = {
             "message": f"{a.message} ({kind}: {rel})",
             "content": base64.b64encode(data).decode(),
+            # 显式声明编码，不依赖服务端对 base64 串的自动识别。
+            # 2026-11-13 实测：写 .github/ 下的非 workflow 文件可以成功，
+            # 但 .github/workflows/ 整个子树返回 404（账号邮箱未验证时的平台限制）。
+            "encoding": "base64",
             "branch": a.branch,
         }
         if sha:
@@ -147,6 +151,10 @@ def main():
             if i % 10 == 0 or i == len(plan_put):
                 print(f"    [{i}/{len(plan_put)}] 已写入 {ok} 个")
         except RuntimeError as e:
+            if rel.startswith(".github/workflows/"):
+                print(f"    ⚠️ {rel}: 平台拒绝写入 .github/workflows/（账号邮箱未验证），"
+                      f"已跳过 —— 用 scripts/publish_ci_workflow.sh 处理")
+                continue
             fail += 1
             print(f"    ❌ {rel}: {str(e)[:200]}")
 
