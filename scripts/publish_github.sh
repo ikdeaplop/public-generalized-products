@@ -53,6 +53,14 @@ fi
 
 echo
 echo "==> [4/5] 创建并推送"
+# ---- 推送通道选择 -------------------------------------------------------
+# `git push`（HTTPS）需要账号**已验证邮箱**；账号没设邮箱时会被 403 拒绝。
+# `PUT /repos/{owner}/{repo}/contents/{path}`（Contents API）**不看邮箱**，
+# 但 GitHub 禁止用它写 `.github/`（平台安全策略 → 404）。
+# 所以：优先 git push，失败则降级到 Contents API，并如实报告 .github 缺口。
+PUSH_MODE="git"
+
+
 if [ "$EXISTS" -eq 0 ]; then
   # 注意：`gh repo create` 不支持 --add-topic（那是 `gh repo edit` 的参数）——
   # 实测踩过：unknown flag: --add-topic。topic 在下面 [5] 阶段补。
@@ -68,7 +76,16 @@ else
   git remote add origin "https://github.com/$REPO_SLUG.git"
 fi
 
-git push -u origin "$BRANCH"
+if git push -u origin "$BRANCH" 2>/tmp/_push_err.txt; then
+  PUSH_MODE="git"
+  echo "   git push 成功"
+else
+  echo "   git push 失败：$(tail -2 /tmp/_push_err.txt | tr '\n' ' ' | cut -c1-160)"
+  echo "   → 降级到 Contents API（不受邮箱验证限制）"
+  PUSH_MODE="api"
+  python3 scripts/push_via_api.py --repo "$REPO_SLUG" --branch "$BRANCH" \
+    --message "feat: publish repository contents"
+fi
 
 echo
 echo "==> [5/5] 核验"
@@ -84,6 +101,14 @@ gh repo edit "$REPO_SLUG" \
 
 gh repo view "$REPO_SLUG" --json name,visibility,url,description --jq \
   '"   名称: \(.name)\n   可见性: \(.visibility)\n   地址: \(.url)\n   描述: \(.description)"'
-echo "   远端分支：$(git ls-remote --heads origin "$BRANCH" | awk '{print $2}' | head -1)"
+echo "   远端分支：$(git ls-remote --heads origin "$BRANCH" 2>/dev/null | awk '{print $2}' | head -1)"
+echo "   推送通道：$PUSH_MODE"
+if [ "$PUSH_MODE" = "api" ]; then
+  echo
+  echo "⚠️ 已知限制：Contents API 无法写入 .github/（GitHub 平台禁止），"
+  echo "   因此 CI workflow 未上线。补齐方式二选一："
+  echo "   a) 在 GitHub 网页设置并验证账号邮箱 → 之后 git push 即可（含 .github/）"
+  echo "   b) 手动把 .github/workflows/ci.yml 传到网页端"
+fi
 echo
 echo "✅ 发布完成：https://github.com/$REPO_SLUG"
