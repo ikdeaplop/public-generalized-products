@@ -121,10 +121,10 @@ def main():
     plan_put, plan_del = [], []
     for rel, data in files:
         if rel in remote:
-            # 内容是否真变了？用远端 sha 对比本地 git blob sha
-            plan_put.append((rel, data, "update"))
+            # 更新已存在文件：Contents API **必须带 sha**（否则 422 "sha wasn't supplied"）
+            plan_put.append((rel, data, "update", remote[rel]))
         else:
-            plan_put.append((rel, data, "create"))
+            plan_put.append((rel, data, "create", None))
     if not a.keep_remote:
         for rel in remote:
             if rel not in {r for r, _ in files}:
@@ -133,12 +133,14 @@ def main():
     print(f"  新增/更新 {len(plan_put)} 个，删除 {len(plan_del)} 个")
 
     ok = fail = 0
-    for i, (rel, data, kind) in enumerate(plan_put, 1):
+    for i, (rel, data, kind, sha) in enumerate(plan_put, 1):
         payload = {
             "message": f"{a.message} ({kind}: {rel})",
             "content": base64.b64encode(data).decode(),
             "branch": a.branch,
         }
+        if sha:
+            payload["sha"] = sha
         try:
             gh_api(f"repos/{a.repo}/contents/{rel}", method="PUT", payload=payload)
             ok += 1
