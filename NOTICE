@@ -1,0 +1,42 @@
+# NOTICE
+
+public-generalized-products
+
+Copyright (c) 2026 YOUR NAME
+
+This product includes software developed by the repository author.
+
+## Independence statement
+
+This project is an independent personal work. It is **not** affiliated with,
+endorsed by, sponsored by, or officially connected to Anthropic, OpenAI,
+GitHub (Microsoft), JetBrains, Apple Inc., ByteDance, or any other company
+or organization. No third-party company has reviewed, approved, or contributed
+to this repository.
+
+## Trademarks
+
+All product names, logos, and brands referenced in this repository — including
+but not limited to Anthropic / Claude, OpenAI / ChatGPT / Codex, GitHub /
+Copilot, JetBrains / IntelliJ / PyCharm, macOS, Vision, Swift, Python, and
+their respective logos — are the property of their respective owners and are
+used for identification purposes only. Their use does not imply any endorsement
+or affiliation with this project.
+
+## Third-party components
+
+This repository depends on **no third-party Python packages**. It relies on
+the following system components, which are licensed separately by their
+respective owners:
+
+- **macOS Vision framework** — Apple Inc. (used by the OCR tool)
+- **Swift compiler (`swiftc`)** — Apple Inc.
+- **Python standard library** — Python Software Foundation (PSF License)
+
+## Sensitive-content policy
+
+Artifacts published here are passed through `scripts/check_sensitive.sh`
+before every push, and the same check runs in CI. See `docs/` for the
+redaction checklist. No credentials, tokens, cookies, private keys, personal
+paths, private network addresses, or personal identifiers are intended to be
+present in this repository.
