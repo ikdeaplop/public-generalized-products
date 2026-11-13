@@ -56,8 +56,9 @@ echo "==> [4/5] 创建并推送"
 # ---- 推送通道选择 -------------------------------------------------------
 # `git push`（HTTPS）需要账号**已验证邮箱**；账号没设邮箱时会被 403 拒绝。
 # `PUT /repos/{owner}/{repo}/contents/{path}`（Contents API）**不看邮箱**，
-# 但 GitHub 禁止用它写 `.github/`（平台安全策略 → 404）。
-# 所以：优先 git push，失败则降级到 Contents API，并如实报告 .github 缺口。
+# 但账号邮箱未验证时，GitHub 会对 `.github/workflows/` 整个目录子树返回 404
+# （实测：`.github/PULL_REQUEST_TEMPLATE.md` → 201，同目录的 workflows/ → 404）。
+# 所以：优先 git push，失败则降级到 Contents API，并如实报告 workflow 缺口。
 PUSH_MODE="git"
 
 
@@ -105,10 +106,11 @@ echo "   远端分支：$(git ls-remote --heads origin "$BRANCH" 2>/dev/null | a
 echo "   推送通道：$PUSH_MODE"
 if [ "$PUSH_MODE" = "api" ]; then
   echo
-  echo "⚠️ 已知限制：Contents API 无法写入 .github/（GitHub 平台禁止），"
+  echo "⚠️ 已知限制：账号邮箱未验证时，GitHub 对 .github/workflows/ 整个子树返回 404，"
   echo "   因此 CI workflow 未上线。补齐方式二选一："
-  echo "   a) 在 GitHub 网页设置并验证账号邮箱 → 之后 git push 即可（含 .github/）"
-  echo "   b) 手动把 .github/workflows/ci.yml 传到网页端"
+  echo "   a) 在 GitHub 网页把账号邮箱设为 noreply 形式并验证 → 之后 git push 即可（含 workflows/）"
+  echo "   b) 注册 SSH key 后用 ssh 推 workflows/（不校验邮箱）"
+  echo "   本地等价保障：bash scripts/ci_local.sh（同样 7 项检查）"
 fi
 echo
 echo "✅ 发布完成：https://github.com/$REPO_SLUG"
